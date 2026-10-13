@@ -144,6 +144,28 @@ extension BigQueryClient {
       method: .delete, path: Self.tableResourcePath(self.resolve(id)), options: options)
     return try await self.transport.deleteOrFalse(request)
   }
+
+  /// Returns the partition IDs of a partitioned table, such as `20240102` for a daily
+  /// partition.
+  ///
+  /// Reads the `partition_id` column of the `{table}$__PARTITIONS_SUMMARY__` meta-table.
+  ///
+  /// - Parameters:
+  ///   - table: the table. A `nil` project means the client's project.
+  ///   - options: per-call options, used for every request.
+  public func listPartitions(of table: TableID, options: RequestOptions = .init()) async throws
+    -> [String]
+  {
+    var summary = table
+    summary.tableID += "$__PARTITIONS_SUMMARY__"
+    let rows = try await self.listRows(in: summary, options: options)
+    guard let column = rows.schema.index(of: "partition_id") else { return [] }
+    var partitions: [String] = []
+    for try await row in rows {
+      if case .scalar(let id) = row[column] { partitions.append(id) }
+    }
+    return partitions
+  }
 }
 
 extension BigQueryClient {
