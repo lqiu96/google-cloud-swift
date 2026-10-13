@@ -84,14 +84,3 @@ extension Project {
       friendlyName: wire.friendlyName?.nonEmpty)
   }
 }
-
-/// Builds the paging query parameters of a list request.
-enum ResourcePaging {
-  /// Returns `maxResults` and `pageToken` parameters for the non-`nil` arguments.
-  static func query(_ pageSize: Int?, _ pageToken: String?) -> [URLQueryItem] {
-    var query: [URLQueryItem] = []
-    if let pageSize { query.append(URLQueryItem(name: "maxResults", value: String(pageSize))) }
-    if let pageToken { query.append(URLQueryItem(name: "pageToken", value: pageToken)) }
-    return query
-  }
-}
