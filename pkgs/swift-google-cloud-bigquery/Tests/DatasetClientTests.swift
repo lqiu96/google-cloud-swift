@@ -298,6 +298,17 @@ import Testing
     #expect(error?.message == "not implemented")
   }
 
+  // Baseline: U.Dataset.03
+  @Test func tableOfDatasetInAnotherProjectUsesThatProject() async throws {
+    let dataset = DatasetID(projectID: "other", datasetID: "d")
+    self.fake.enqueue(
+      json: #"{"tableReference": {"projectId": "other", "datasetId": "d", "tableId": "t"}}"#)
+    let table = try await self.fake.client().getTable(
+      TableID(projectID: dataset.projectID, datasetID: dataset.datasetID, tableID: "t"))
+    #expect(self.fake.requests.first?.path == "/bigquery/v2/projects/other/datasets/d/tables/t")
+    #expect(table?.id == TableID(projectID: "other", datasetID: "d", tableID: "t"))
+  }
+
   // Design: §5.4
   @Test func clearingResourceTagKeepsDotsInKey() async throws {
     self.fake.enqueue(json: self.datasetJSON)
