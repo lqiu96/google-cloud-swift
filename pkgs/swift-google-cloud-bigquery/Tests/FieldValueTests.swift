@@ -17,6 +17,169 @@ import Testing
 
 @testable import GoogleCloudBigQuery
 
+@Suite struct FieldValueTests {
+  // Baseline: U.FieldValue.01
+  @Test func scalarAccessorsConvertCellText() throws {
+    #expect(try FieldValue.scalar("false").boolValue == false)
+    #expect(try FieldValue.scalar("TRUE").boolValue == true)
+    #expect(try FieldValue.scalar("1").int64Value == 1)
+    #expect(try FieldValue.scalar("1.5").doubleValue == 1.5)
+    #expect(
+      FieldValue.scalar("POINT(-122.350220 47.649154)").geographyValue
+        == "POINT(-122.350220 47.649154)")
+    #expect(
+      try FieldValue.scalar("123456789.123456789").numericValue
+        == Decimal(string: "123456789.123456789"))
+    #expect(FieldValue.scalar("string").stringValue == "string")
+    #expect(
+      try FieldValue.scalar(Data([0xD, 0xE, 0xA, 0xD]).base64EncodedString()).bytesValue
+        == Data([0xD, 0xE, 0xA, 0xD]))
+    #expect(FieldValue.scalar(#"{"a": 1}"#).jsonValue == #"{"a": 1}"#)
+    #expect(try FieldValue.scalar("NaN").doubleValue?.isNaN == true)
+    #expect(try FieldValue.scalar("-Infinity").doubleValue == -.infinity)
+  }
+
+  // Baseline: U.FieldValue.01
+  @Test func integerTimestampTextIsMicroseconds() throws {
+    // Java reads "42" as seconds; BigQuery's int64 timestamp output is microseconds.
+    #expect(try FieldValue.scalar("42").timestampMicros == 42)
+    #expect(try FieldValue.scalar("42").timestampValue == Date(timeIntervalSince1970: 0.000042))
+  }
+
+  // Baseline: U.FieldValue.01
+  @Test func intervalAccessorParsesBothForms() throws {
+    let expected = Interval(
+      years: 3, months: 2, days: 1, hours: 12, minutes: 34, seconds: 56, nanoseconds: 789_000_000)
+    #expect(try FieldValue.scalar("P3Y2M1DT12H34M56.789S").intervalValue == expected)
+    #expect(try FieldValue.scalar("3-2 1 12:34:56.789").intervalValue == expected)
+    #expect(FieldValue.scalar("3-2 1 12:34:56.789").stringValue == "3-2 1 12:34:56.789")
+  }
+
+  // Baseline: U.FieldValue.01
+  @Test func nullReadsAsNilFromEveryAccessor() throws {
+    let value = FieldValue.null
+    #expect(value.isNull)
+    #expect(value.stringValue == nil)
+    #expect(try value.int64Value == nil)
+    #expect(try value.doubleValue == nil)
+    #expect(try value.boolValue == nil)
+    #expect(try value.bytesValue == nil)
+    #expect(try value.numericValue == nil)
+    #expect(try value.bigNumericValue == nil)
+    #expect(try value.timestampValue == nil)
+    #expect(try value.dateValue == nil)
+    #expect(try value.timeValue == nil)
+    #expect(try value.dateTimeValue == nil)
+    #expect(try value.intervalValue == nil)
+    #expect(try value.rangeValue == nil)
+    #expect(value.arrayValue == nil)
+    #expect(value.recordValue == nil)
+  }
+
+  // Baseline: U.FieldValue.01
+  @Test func repeatedAndRecordAccessorsReturnNestedValues() throws {
+    let repeated = FieldValue.array([.scalar("1"), .scalar("1")])
+    #expect(repeated.arrayValue == [.scalar("1"), .scalar("1")])
+    let row = Row(
+      schema: [Field("f", .float64), Field("t", .timestamp)],
+      values: [.scalar("1.5"), .scalar("42")])
+    #expect(FieldValue.record(row).recordValue == row)
+  }
+
+  // Baseline: U.FieldValue.01, U.Range.01
+  @Test func rangeAccessorParsesBounds() throws {
+    let range = try #require(try FieldValue.scalar("[2020-01-01, UNBOUNDED)").rangeValue)
+    #expect(range.start == "2020-01-01")
+    #expect(range.end == nil)
+  }
+
+  // Baseline: U.FieldValue.02
+  @Test func floatSecondsTimestampConvertsToMicros() throws {
+    #expect(
+      try FieldValue.scalar("-1.9954383398377106E10").timestampMicros == -19_954_383_398_377_106)
+    #expect(try FieldValue.scalar("1408452095.22").timestampMicros == 1_408_452_095_220_000)
+  }
+
+  // Baseline: U.FieldValue.03
+  @Test func int64TimestampIsLossless() throws {
+    let lossy = try FieldValue.scalar("1.9954383398377106E10").timestampMicros
+    let lossless = try FieldValue.scalar("19954383398377106").timestampMicros
+    #expect(lossy == lossless)
+    #expect(lossless == 19_954_383_398_377_106)
+    #expect(try FieldValue.scalar("253402300799999999").timestampMicros == 253_402_300_799_999_999)
+  }
+
+  // Design: §4.5
+  @Test func iso8601AndPicosecondTimestampsParseLosslessly() throws {
+    let picos = FieldValue.scalar("2025-01-01T12:34:56.123456789123Z")
+    #expect(
+      try picos.preciseTimestampValue
+        == BigQueryTimestamp(seconds: 1_735_734_896, picoseconds: 123_456_789_123))
+    #expect(try picos.timestampMicros == 1_735_734_896_123_456)
+    #expect(
+      try FieldValue.scalar("9999-12-31T23:59:59.999999Z").timestampMicros
+        == 253_402_300_799_999_999)
+    #expect(
+      try FieldValue.scalar("0001-01-01T00:00:00.000000Z").timestampMicros
+        == -62_135_596_800_000_000)
+    #expect(
+      try FieldValue.scalar("1969-12-31T23:59:59.999999999999Z").timestampMicros == -1)
+    #expect(
+      try FieldValue.scalar("1969-12-31T23:59:59.000000000001Z").timestampMicros == -1_000_000)
+    #expect(try FieldValue.null.preciseTimestampValue == nil)
+  }
+
+  // Design: §4.5
+  @Test func civilAccessorsParseCanonicalText() throws {
+    #expect(
+      try FieldValue.scalar("2024-02-29").dateValue == BigQueryDate(year: 2024, month: 2, day: 29))
+    #expect(
+      try FieldValue.scalar("05:41:35.220000").timeValue
+        == BigQueryTime(hour: 5, minute: 41, second: 35, nanosecond: 220_000_000))
+    #expect(
+      try FieldValue.scalar("2014-08-19T05:41:35.220000").dateTimeValue
+        == BigQueryDateTime(
+          date: BigQueryDate(year: 2014, month: 8, day: 19),
+          time: BigQueryTime(hour: 5, minute: 41, second: 35, nanosecond: 220_000_000)))
+    #expect(
+      try FieldValue.scalar(
+        "578960446186580977117854925043439539266.34992332820282019728792003956564819967"
+      )
+      .bigNumericValue?.description
+        == "578960446186580977117854925043439539266.34992332820282019728792003956564819967")
+  }
+
+  // Design: §4.5
+  @Test func invalidTextThrowsDataCorrupted() {
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("abc").int64Value }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("abc").doubleValue }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("yes").boolValue }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("not base64!").bytesValue }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("1.2.3").numericValue }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("2024-13-01").dateValue }
+    #expect(throws: DecodingError.self) { try FieldValue.scalar("later").timestampMicros }
+  }
+
+  // Baseline: U.FieldValueList.03
+  @Test func wrongShapeThrowsTypeMismatchFromParsingAccessors() {
+    let row = Row(schema: [Field("a", .string)], values: [.scalar("x")])
+    #expect(throws: DecodingError.self) { try FieldValue.array([]).int64Value }
+    #expect(throws: DecodingError.self) { try FieldValue.record(row).timestampMicros }
+  }
+
+  // Design: §4.5
+  @Test func wrongShapeIsNilFromShapeAccessors() {
+    let row = Row(schema: [Field("a", .string)], values: [.scalar("x")])
+    #expect(FieldValue.array([]).stringValue == nil)
+    #expect(FieldValue.record(row).jsonValue == nil)
+    #expect(FieldValue.array([.null]).geographyValue == nil)
+    #expect(FieldValue.scalar("1").arrayValue == nil)
+    #expect(FieldValue.record(row).arrayValue == nil)
+    #expect(FieldValue.scalar("1").recordValue == nil)
+    #expect(FieldValue.array([]).recordValue == nil)
+  }
+}
+
 @Suite struct IntervalTests {
   // Baseline: U.FieldValue.04
   @Test(
@@ -222,5 +385,48 @@ import Testing
         == #"["2025-01-01T12:34:56.123456789123Z","2024-01-02T03:04:05.123456Z"]"#)
     #expect(
       try JSONDecoder().decode([BigQueryTimestamp].self, from: encoded) == [picos, microsOnly])
+  }
+}
+
+@Suite struct BigQueryRangeTests {
+  // Baseline: U.Range.01
+  @Test func parsesBoundsIncludingUnboundedAndNull() throws {
+    let both = try #require(BigQueryRange("[2020-01-01, 2020-12-31)"))
+    #expect(both.start == "2020-01-01")
+    #expect(both.end == "2020-12-31")
+    let unbounded = try #require(BigQueryRange("[UNBOUNDED, unbounded)"))
+    #expect(unbounded.start == nil)
+    #expect(unbounded.end == nil)
+    let null = try #require(BigQueryRange("[NULL, 2020-12-31)"))
+    #expect(null.start == nil)
+    #expect(null.end == "2020-12-31")
+    let timestamps = try #require(
+      BigQueryRange("[2014-08-19 12:41:35.220000+00:00, 2015-09-20 13:41:35.220000+01:00)"))
+    #expect(timestamps.start == "2014-08-19 12:41:35.220000+00:00")
+    #expect(timestamps.end == "2015-09-20 13:41:35.220000+01:00")
+    #expect(BigQueryRange("2020-01-01, 2020-12-31") == nil)
+    #expect(BigQueryRange("[2020-01-01)") == nil)
+  }
+
+  // Baseline: U.Range.02
+  @Test func boundValuesAreFieldValues() {
+    let range = BigQueryRange(start: "1970-01-02", end: nil, elementType: .date)
+    #expect(range.startValue == .scalar("1970-01-02"))
+    #expect(range.endValue == .null)
+    #expect(range.description == "[1970-01-02, UNBOUNDED)")
+  }
+
+  // Baseline: U.Range.01
+  @Test func typedFactoriesSetElementType() {
+    let dates = BigQueryRange.date(from: BigQueryDate(year: 1970, month: 1, day: 2), to: nil)
+    #expect(dates == BigQueryRange(start: "1970-01-02", end: nil, elementType: .date))
+    let timestamps = BigQueryRange.timestamp(
+      from: nil, to: Date(timeIntervalSince1970: 1_408_452_095.22))
+    #expect(timestamps.elementType == .timestamp)
+    #expect(timestamps.start == nil)
+    #expect(timestamps.end == "2014-08-19 12:41:35.220000+00:00")
+    let precise = BigQueryRange.timestamp(
+      from: BigQueryTimestamp("2025-01-01T12:34:56.123456789123Z"), to: nil)
+    #expect(precise.start == "2025-01-01 12:34:56.123456789123+00:00")
   }
 }
