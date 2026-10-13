@@ -219,6 +219,39 @@ import Testing
       { _ = try await $0.deleteDataset(dataset) }
     ),
     (
+      "routines.insert", .post, "/projects/p/datasets/d/routines",
+      { _ = try await $0.createRoutine(Routine(id: routine)) }
+    ),
+    (
+      "routines.get", .get, "/projects/p/datasets/d/routines/r",
+      { _ = try await $0.getRoutine(routine) }
+    ),
+    (
+      "routines.list", .get, "/projects/p/datasets/d/routines",
+      { for try await _ in $0.listRoutines(in: dataset) {} }
+    ),
+    (
+      "routines.update", .put, "/projects/p/datasets/d/routines/r",
+      { _ = try await $0.updateRoutine(Routine(id: routine)) }
+    ),
+    (
+      "routines.delete", .delete, "/projects/p/datasets/d/routines/r",
+      { _ = try await $0.deleteRoutine(routine) }
+    ),
+    ("models.get", .get, "/projects/p/datasets/d/models/m", { _ = try await $0.getModel(model) }),
+    (
+      "models.list", .get, "/projects/p/datasets/d/models",
+      { for try await _ in $0.listModels(in: dataset) {} }
+    ),
+    (
+      "models.patch", .patch, "/projects/p/datasets/d/models/m",
+      { _ = try await $0.updateModel(Model(id: model)) }
+    ),
+    (
+      "models.delete", .delete, "/projects/p/datasets/d/models/m",
+      { _ = try await $0.deleteModel(model) }
+    ),
+    (
       "tables.getIamPolicy", .post, "/projects/p/datasets/d/tables/t:getIamPolicy",
       { _ = try await $0.getIAMPolicy(for: table) }
     ),
