@@ -27,7 +27,7 @@ import NIOFoundationCompat
   // A default value for the maximum response size. Note that most gRPC client libraries limit
   // response sizes to 4 MiB, including successful value responses. Setting a limit that is 8 times
   // as large seems fine.
-  static let defaultMaximumResponseSize = 32 * 1024 * 1024
+  static let defaultMaximumResponseSize = 128 * 1024 * 1024
 
   let response: AsyncHTTPClient.HTTPClientResponse
 
@@ -50,7 +50,7 @@ import NIOFoundationCompat
   @concurrent
   public func data(upTo: Int) async throws -> Data {
     let buffer = try await self.response.body.collect(upTo: upTo)
-    return Data(buffer: buffer)
+    return Data(buffer: buffer, byteTransferStrategy: .noCopy)
   }
 
   @concurrent
@@ -74,7 +74,7 @@ import NIOFoundationCompat
     let data: Data
     do {
       let buffer = try await self.response.body.collect(upTo: Self.defaultMaximumResponseSize)
-      data = Data(buffer: buffer)
+      data = Data(buffer: buffer, byteTransferStrategy: .noCopy)
     } catch let e {
       return .io(e)
     }
