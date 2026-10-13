@@ -31,6 +31,113 @@ private func roundTrip(_ json: String) throws -> GoogleCloudBigQuery.JobConfigur
   return configuration
 }
 
+@Suite struct QueryJobConfigurationTests {
+  // Baseline: U.QueryJobConfiguration.01, U.QueryJobConfiguration.03
+  @Test func roundTripsEveryField() throws {
+    let configuration = try roundTrip(
+      #"""
+      {"dryRun": true, "jobTimeoutMs": "1000", "labels": {"k": "v"}, "reservation": "r",
+       "query": {"query": "SELECT @a", "useLegacySql": false, "parameterMode": "NAMED",
+         "queryParameters": [{"name": "a", "parameterType": {"type": "INT64"},
+                              "parameterValue": {"value": "1"}}],
+         "defaultDataset": {"projectId": "p", "datasetId": "d"},
+         "destinationTable": {"projectId": "p", "datasetId": "d", "tableId": "t"},
+         "createDisposition": "CREATE_NEVER", "writeDisposition": "WRITE_APPEND",
+         "schemaUpdateOptions": ["ALLOW_FIELD_ADDITION"],
+         "userDefinedFunctionResources": [{"inlineCode": "f"}, {"resourceUri": "gs://b/f.js"}],
+         "tableDefinitions": {"ext": {"sourceUris": ["gs://b/f.csv"], "sourceFormat": "CSV",
+                                      "schema": {"fields": [{"name": "c", "type": "STRING"}]}}},
+         "priority": "BATCH", "allowLargeResults": true, "flattenResults": false,
+         "useQueryCache": false, "maximumBytesBilled": "100",
+         "destinationEncryptionConfiguration": {"kmsKeyName": "k"},
+         "timePartitioning": {"type": "DAY", "field": "ts", "expirationMs": "5000"},
+         "clustering": {"fields": ["c"]},
+         "scriptOptions": {"statementTimeoutMs": "10", "statementByteBudget": "20",
+                           "keyResultStatement": "FIRST_SELECT"},
+         "connectionProperties": [{"key": "time_zone", "value": "UTC"}],
+         "createSession": true}}
+      """#)
+    guard case .query(let query) = configuration else {
+      Issue.record("expected a query configuration")
+      return
+    }
+    #expect(query.query == "SELECT @a")
+    #expect(query.parameters == .named(["a": .int64(1)]))
+    #expect(query.defaultDataset == DatasetID(projectID: "p", datasetID: "d"))
+    #expect(query.destinationTable == TableID(projectID: "p", datasetID: "d", tableID: "t"))
+    #expect(query.createDisposition == .createNever)
+    #expect(query.writeDisposition == .writeAppend)
+    #expect(query.schemaUpdateOptions == [.allowFieldAddition])
+    #expect(query.userDefinedFunctions == [.inline("f"), .fromURI("gs://b/f.js")])
+    let external = try #require(query.tableDefinitions["ext"])
+    #expect(external.sourceURIs == ["gs://b/f.csv"])
+    #expect(external.format == .csv)
+    #expect(external.schema == Schema([Field("c", .string)]))
+    #expect(query.priority == .batch)
+    #expect(query.allowLargeResults == true)
+    #expect(query.flattenResults == false)
+    #expect(query.useQueryCache == false)
+    #expect(query.maximumBytesBilled == 100)
+    #expect(query.destinationEncryption == EncryptionConfiguration(kmsKeyName: "k"))
+    #expect(
+      query.timePartitioning == TimePartitioning(type: .day, field: "ts", expiration: .seconds(5)))
+    #expect(query.clustering == Clustering(fields: ["c"]))
+    #expect(
+      query.scriptOptions
+        == ScriptOptions(
+          statementTimeout: .milliseconds(10), statementByteBudget: 20,
+          keyResultStatement: .firstSelect))
+    #expect(query.connectionProperties == [.timeZone("UTC")])
+    #expect(query.createSession == true)
+    #expect(query.dryRun)
+    #expect(query.jobTimeout == .seconds(1))
+    #expect(query.labels == ["k": "v"])
+    #expect(query.reservation == "r")
+  }
+
+  // Baseline: U.QueryJobConfiguration.02, U.JobInfo.02
+  @Test func defaultProjectFillsOnlyMissingProjects() {
+    var query = QueryJobConfiguration("SELECT 1")
+    query.defaultDataset = DatasetID(datasetID: "d")
+    query.destinationTable = TableID(projectID: "explicit", datasetID: "d", tableID: "t")
+    let filled = query.withDefaultProject("p")
+    #expect(filled.defaultDataset?.projectID == "p")
+    #expect(filled.destinationTable?.projectID == "explicit")
+  }
+
+  // Design: §6.1
+  @Test func positionalParametersRoundTrip() throws {
+    let configuration = try roundTrip(
+      #"""
+      {"query": {"query": "SELECT ?", "parameterMode": "POSITIONAL",
+        "queryParameters": [{"parameterType": {"type": "STRING"}, "parameterValue": {"value": "x"}}]}}
+      """#)
+    guard case .query(let query) = configuration else {
+      Issue.record("expected a query configuration")
+      return
+    }
+    #expect(query.parameters == .positional([.string("x")]))
+  }
+}
+
+extension QueryJobConfigurationTests {
+  // Design: §6.1 — a parameter the library can't read must not fail getJob or listJobs.
+  @Test func unreadableParametersDecodeAsNil() throws {
+    let wire = try WireJSON.decode(
+      #"""
+      {"query": {"query": "SELECT @a", "parameterMode": "NAMED",
+        "queryParameters": [{"name": "a", "parameterValue": {"value": "1"}}]}}
+      """#, as: GoogleCloudBigQueryV2.JobConfiguration.self)
+    let converted: GoogleCloudBigQuery.JobConfiguration? = .init(wire: wire)
+    guard case .query(let query) = converted else {
+      Issue.record("expected a query configuration")
+      return
+    }
+    #expect(query.query == "SELECT @a")
+    #expect(query.parameters == nil)
+  }
+}
+
 @Suite struct LoadJobConfigurationTests {
   // Baseline: U.LoadJobConfiguration.01, U.LoadJobConfiguration.03
   @Test func roundTripsEveryField() throws {

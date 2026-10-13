@@ -19,6 +19,8 @@ import GoogleCloudBigQueryV2
 /// The four cases are the job types BigQuery has. This enum is closed: a job of a type this
 /// library does not know has a `nil` ``Job/configuration`` instead of a new case.
 public enum JobConfiguration: Sendable, Equatable {
+  /// Runs a query.
+  case query(QueryJobConfiguration)
   /// Loads data into a table.
   case load(LoadJobConfiguration)
   /// Exports a table or model to Cloud Storage.
@@ -156,7 +158,9 @@ struct CommonJobFields: Equatable {
 extension JobConfiguration {
   /// Converts a wire configuration, or returns `nil` for a job type this library does not know.
   init?(wire: GoogleCloudBigQueryV2.JobConfiguration) {
-    if let load = wire.load {
+    if let query = wire.query {
+      self = .query(QueryJobConfiguration(wire: query, common: wire))
+    } else if let load = wire.load {
       self = .load(LoadJobConfiguration(wire: load, common: wire))
     } else if let extract = wire.extract {
       self = .extract(ExtractJobConfiguration(wire: extract, common: wire))
@@ -170,6 +174,10 @@ extension JobConfiguration {
   var wire: GoogleCloudBigQueryV2.JobConfiguration {
     var wire = GoogleCloudBigQueryV2.JobConfiguration()
     switch self {
+    case .query(let query):
+      wire.query = query.wire
+      wire.dryRun = query.dryRun ? true : nil
+      query.common.apply(to: &wire)
     case .load(let load):
       wire.load = load.wire
       load.common.apply(to: &wire)
@@ -188,6 +196,7 @@ extension JobConfiguration {
   /// An explicit project is never replaced.
   func withDefaultProject(_ projectID: String) -> JobConfiguration {
     switch self {
+    case .query(let query): return .query(query.withDefaultProject(projectID))
     case .load(let load): return .load(load.withDefaultProject(projectID))
     case .extract(let extract): return .extract(extract.withDefaultProject(projectID))
     case .copy(let copy): return .copy(copy.withDefaultProject(projectID))
