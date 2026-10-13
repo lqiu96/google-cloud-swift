@@ -87,5 +87,8 @@ import Testing
   // Design: §4.4
   @Test func fixedItemsForTestDoubles() async throws {
     #expect(try await PagedSequence([1, 2, 3]).collect() == [1, 2, 3])
+    let rows = RowSequence(schema: [Field("x", .int64)], rows: [])
+    #expect(try await rows.collect().isEmpty)
+    #expect(rows.schema.fields.map(\.name) == ["x"])
   }
 }
