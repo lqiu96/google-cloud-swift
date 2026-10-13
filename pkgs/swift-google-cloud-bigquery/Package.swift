@@ -86,6 +86,18 @@ let package = Package(
         .product(name: "NIOCore", package: "swift-nio"),
       ],
       path: "Tests",
+      exclude: ["IntegrationTests"],
+      swiftSettings: swiftSettings
+    ),
+    .testTarget(
+      name: "GoogleCloudBigQueryIntegrationTests",
+      dependencies: [
+        "GoogleCloudBigQuery",
+        .product(name: "GoogleAuth", package: "swift-google-auth"),
+        .product(name: "GoogleGax", package: "swift-google-gax"),
+        .product(name: "GoogleCloudBigQueryV2", package: "swift-google-cloud-bigquery-v2"),
+      ],
+      path: "Tests/IntegrationTests",
       swiftSettings: swiftSettings
     ),
   ]
