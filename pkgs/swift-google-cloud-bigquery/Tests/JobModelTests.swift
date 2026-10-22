@@ -146,6 +146,20 @@ import Testing
     #expect(statistics.query?.queryPlan.isEmpty == true)
     #expect(statistics.load == nil)
   }
+
+  // Contract: cascade dataset-less TableID in JobStatistics from PR 1 (#3)
+  @Test func queryStatisticsDecodesDatasetLessReferencedTables() throws {
+    let wire = try WireJSON.decode(
+      #"""
+      {"query": {"referencedTables": [{"projectId": "p", "datasetId": "", "tableId": "_anon"}]}}
+      """#, as: GoogleCloudBigQueryV2.JobStatistics.self)
+    let statistics = JobStatistics(wire: wire)
+    let query = try #require(statistics.query)
+    let table = try #require(query.referencedTables.first)
+    #expect(!table.hasDataset)
+    #expect(table.description == "p._anon")
+    #expect(table.tableID == "_anon")
+  }
 }
 
 @Suite struct QueryStageTests {
