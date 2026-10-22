@@ -91,6 +91,13 @@ public struct TableID: Sendable, Hashable, CustomStringConvertible {
   /// The dataset containing this table.
   public var dataset: DatasetID { DatasetID(projectID: self.projectID, datasetID: self.datasetID) }
 
+  /// Whether this table ID includes a non-empty dataset ID.
+  ///
+  /// BigQuery query job statistics and anonymous temporary tables may omit the dataset.
+  public var hasDataset: Bool {
+    !self.datasetID.isEmpty
+  }
+
   /// The Standard SQL form, `project.dataset.table`.
   public var description: String {
     joinResourcePath(self.projectID, [self.datasetID, self.tableID])
@@ -208,5 +215,5 @@ func parseResourcePath(_ string: String, count: Int, kind: String) throws -> (St
 }
 
 func joinResourcePath(_ project: String?, _ parts: [String]) -> String {
-  ((project.map { [$0] } ?? []) + parts).joined(separator: ".")
+  ((project.map { [$0] } ?? []) + parts).filter { !$0.isEmpty }.joined(separator: ".")
 }

@@ -98,6 +98,21 @@ import Testing
     let client = FakeHTTPTransport().client(projectID: "p")
     #expect(client.resolve(TableID(datasetID: "d", tableID: "t")).projectID == "p")
   }
+
+  // Contract: dataset-less TableID for query jobs and anonymous temporary tables
+  @Test func datasetLessTableIDFormattingAndContract() {
+    let anonWithProject = TableID(projectID: "p", datasetID: "", tableID: "_anon")
+    #expect(!anonWithProject.hasDataset)
+    #expect(anonWithProject.description == "p._anon")
+
+    let anonWithoutProject = TableID(datasetID: "", tableID: "_anon")
+    #expect(!anonWithoutProject.hasDataset)
+    #expect(anonWithoutProject.description == "_anon")
+
+    let standard = TableID(projectID: "p", datasetID: "d", tableID: "t")
+    #expect(standard.hasDataset)
+    #expect(standard.description == "p.d.t")
+  }
 }
 
 @Suite struct RoutineIDTests {
