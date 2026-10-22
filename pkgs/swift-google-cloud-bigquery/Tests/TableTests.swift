@@ -377,4 +377,19 @@ private typealias ExternalDataConfiguration = GoogleCloudBigQuery.ExternalDataCo
     let tags = try #require(body?["resourceTags"] as? NSDictionary)
     #expect(tags["example.com:p/env"] is NSNull)
   }
+
+  // Contract: cascade dataset-less TableID contract from PR 1 (#3)
+  @Test func datasetLessTableWireConversion() throws {
+    var wire = GoogleCloudBigQueryV2.Table()
+    var tableRef = GoogleCloudBigQueryV2.TableReference()
+    tableRef.projectId = "p"
+    tableRef.datasetId = ""
+    tableRef.tableId = "_anon"
+    wire.tableReference = tableRef
+
+    let table = Table(wire: wire)
+    #expect(!table.id.hasDataset)
+    #expect(table.id.description == "p._anon")
+    #expect(table.id.tableID == "_anon")
+  }
 }
