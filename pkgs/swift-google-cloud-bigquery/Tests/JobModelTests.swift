@@ -21,6 +21,41 @@ import Testing
 // Statistics and status are output-only: the client decodes them but never sends them. Their
 // "round trip" tests decode a JSON fixture that sets every field and check every field.
 
+@Suite struct JobTests {
+  // Baseline: U.Job.11, U.JobInfo.01
+  @Test func decodesEveryField() throws {
+    let wire = try WireJSON.decode(
+      #"""
+      {"jobReference": {"projectId": "p", "jobId": "j", "location": "EU"},
+       "etag": "e", "selfLink": "https://x/j", "user_email": "me@example.com",
+       "status": {"state": "DONE"},
+       "configuration": {"labels": {"k": "v"}, "query": {"query": "SELECT 1"}},
+       "statistics": {"creationTime": "1000"}}
+      """#, as: GoogleCloudBigQueryV2.Job.self)
+    let job = Job(wire: wire)
+    #expect(job.id == JobID(projectID: "p", jobID: "j", location: "EU"))
+    #expect(job.etag == "e")
+    #expect(job.selfLink == "https://x/j")
+    #expect(job.userEmail == "me@example.com")
+    #expect(job.status.state == .done)
+    #expect(job.statistics?.creationTime == Date(timeIntervalSince1970: 1))
+    var expected = QueryJobConfiguration("SELECT 1")
+    expected.labels = ["k": "v"]
+    #expect(job.configuration == .query(expected))
+  }
+
+  // Baseline: U.Job.11
+  @Test func jobWithoutConfigurationDecodes() throws {
+    let wire = try WireJSON.decode(
+      #"{"jobReference": {"projectId": "p", "jobId": "j"}, "status": {"state": "RUNNING"}}"#,
+      as: GoogleCloudBigQueryV2.Job.self)
+    let job = Job(wire: wire)
+    #expect(job.configuration == nil)
+    #expect(job.statistics == nil)
+    #expect(job.etag == nil)
+  }
+}
+
 @Suite struct JobStatusTests {
   // Baseline: U.JobStatus.01, U.JobStatus.02
   @Test func decodesStateErrorResultAndErrors() throws {
