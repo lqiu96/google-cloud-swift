@@ -224,3 +224,82 @@ import Testing
       try JSONDecoder().decode([BigQueryTimestamp].self, from: encoded) == [picos, microsOnly])
   }
 }
+
+@Suite struct StandardSQLDataTypeTests {
+  @Test func typeKindPropertiesAndDescription() {
+    let kinds: [(StandardSQLDataType.TypeKind, String)] = [
+      (.int64, "INT64"),
+      (.bool, "BOOL"),
+      (.float64, "FLOAT64"),
+      (.string, "STRING"),
+      (.bytes, "BYTES"),
+      (.timestamp, "TIMESTAMP"),
+      (.date, "DATE"),
+      (.time, "TIME"),
+      (.dateTime, "DATETIME"),
+      (.interval, "INTERVAL"),
+      (.geography, "GEOGRAPHY"),
+      (.numeric, "NUMERIC"),
+      (.bigNumeric, "BIGNUMERIC"),
+      (.json, "JSON"),
+      (.array, "ARRAY"),
+      (.struct, "STRUCT"),
+      (.range, "RANGE"),
+    ]
+    for (kind, expected) in kinds {
+      #expect(kind.rawValue == expected)
+      #expect(kind.description == expected)
+      #expect(StandardSQLDataType.TypeKind(rawValue: expected) == kind)
+    }
+  }
+
+  @Test func scalarDataTypes() {
+    let intType = StandardSQLDataType(.int64)
+    #expect(intType.typeKind == .int64)
+    #expect(intType.arrayElementType == nil)
+    #expect(intType.structType == nil)
+    #expect(intType.rangeElementType == nil)
+    #expect(intType == StandardSQLDataType(.int64))
+    #expect(intType != StandardSQLDataType(.string))
+  }
+
+  @Test func arrayDataType() {
+    let element = StandardSQLDataType(.string)
+    let arrayType = StandardSQLDataType.array(of: element)
+    #expect(arrayType.typeKind == .array)
+    #expect(arrayType.arrayElementType == element)
+    #expect(arrayType.structType == nil)
+    #expect(arrayType.rangeElementType == nil)
+  }
+
+  @Test func structDataTypeAndFields() {
+    let field1 = StandardSQLField("id", type: StandardSQLDataType(.int64))
+    let field2 = StandardSQLField(nil, type: StandardSQLDataType(.string))
+    #expect(field1.name == "id")
+    #expect(field1.type == StandardSQLDataType(.int64))
+    #expect(field2.name == nil)
+    #expect(field2.type == StandardSQLDataType(.string))
+
+    let structType = StandardSQLDataType.struct([field1, field2])
+    #expect(structType.typeKind == .struct)
+    #expect(structType.arrayElementType == nil)
+    #expect(structType.rangeElementType == nil)
+    #expect(structType.structType?.fields == [field1, field2])
+  }
+
+  @Test func rangeDataType() {
+    let element = StandardSQLDataType(.date)
+    let rangeType = StandardSQLDataType.range(of: element)
+    #expect(rangeType.typeKind == .range)
+    #expect(rangeType.rangeElementType == element)
+    #expect(rangeType.arrayElementType == nil)
+    #expect(rangeType.structType == nil)
+  }
+
+  @Test func tableTypeColumns() {
+    let col = StandardSQLField("val", type: StandardSQLDataType(.float64))
+    let table = StandardSQLTableType(columns: [col])
+    #expect(table.columns == [col])
+    #expect(table == StandardSQLTableType(columns: [col]))
+  }
+}
