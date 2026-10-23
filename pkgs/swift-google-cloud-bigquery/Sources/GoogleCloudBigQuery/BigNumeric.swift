@@ -56,6 +56,9 @@ public struct BigNumeric: Sendable, Hashable, Codable, LosslessStringConvertible
   }
 
   /// The value as a `Decimal`, rounded to the 38 significant digits that `Decimal` can hold.
+  ///
+  /// Falls back to `0` when Foundation cannot represent the text as a `Decimal` (such as an
+  /// exponent outside `Decimal`'s range). Use ``description`` for the exact decimal text.
   public var decimalValue: Decimal {
     Decimal(string: self.number.plainText, locale: DecimalText.posixLocale) ?? 0
   }
