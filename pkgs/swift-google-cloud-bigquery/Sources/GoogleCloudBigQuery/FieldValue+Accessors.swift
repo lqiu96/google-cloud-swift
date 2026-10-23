@@ -82,8 +82,8 @@ extension FieldValue {
   }
 
   /// A `BIGNUMERIC` (or `NUMERIC`) value, exactly.
-  public var bigNumericValue: BigNumeric? {
-    get throws { try self.parse("BIGNUMERIC") { BigNumeric($0) } }
+  public var bigNumericValue: TestingBigNumeric1234? {
+    get throws { try self.parse("BIGNUMERIC") { TestingBigNumeric1234($0) } }
   }
 
   /// A `TIMESTAMP` value in microseconds since the Unix epoch.
