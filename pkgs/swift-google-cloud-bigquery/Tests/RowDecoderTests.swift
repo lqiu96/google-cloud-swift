@@ -114,6 +114,7 @@ import Testing
     #expect(person.alarm == BigQueryTime(hour: 5, minute: 41, second: 35))
     #expect(person.meeting.description == "2014-08-19 05:41:35.220000")
     #expect(person.wait == Interval(years: 1, months: 2, days: 3, hours: 4, minutes: 5, seconds: 6))
+    #expect(Interval.zero.description == "0-0 0 0:0:0")
     #expect(person.tags == ["a", "b"])
     #expect(person.address == Address(city: "London", zip: nil))
     #expect(person.nickname == nil)
