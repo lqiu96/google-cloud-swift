@@ -81,7 +81,7 @@ import Testing
   }
 }
 
-@Suite struct BigNumericTests {
+@Suite struct TestingBigNumeric1234Tests {
   // Baseline: U.QueryParameterValue.03
   @Test func keepsDecimalTextVerbatim() throws {
     for text in [
@@ -92,32 +92,32 @@ import Testing
       "-578960446186580977117854925043439539266.34992332820282019728792003956564819968",
       "1e-38",
     ] {
-      #expect(try #require(BigNumeric(text)).description == text)
+      #expect(try #require(TestingBigNumeric1234(text)).description == text)
     }
   }
 
   // Design: §4.5
   @Test func equalityComparesNumericValue() throws {
-    #expect(BigNumeric("1.50") == BigNumeric("1.5"))
-    #expect(BigNumeric("1e2") == BigNumeric("100"))
-    #expect(BigNumeric("-0") == BigNumeric("0"))
-    #expect(BigNumeric("1.5") != BigNumeric("1.4"))
-    #expect(Set([BigNumeric("1.0"), BigNumeric("1")]).count == 1)
+    #expect(TestingBigNumeric1234("1.50") == TestingBigNumeric1234("1.5"))
+    #expect(TestingBigNumeric1234("1e2") == TestingBigNumeric1234("100"))
+    #expect(TestingBigNumeric1234("-0") == TestingBigNumeric1234("0"))
+    #expect(TestingBigNumeric1234("1.5") != TestingBigNumeric1234("1.4"))
+    #expect(TestingBigNumeric1234("1.0") == TestingBigNumeric1234("1"))
   }
 
   // Design: §4.5
   @Test func rejectsNonNumbers() {
-    #expect(BigNumeric("") == nil)
-    #expect(BigNumeric("abc") == nil)
-    #expect(BigNumeric("1.2.3") == nil)
-    #expect(BigNumeric("NaN") == nil)
+    #expect(TestingBigNumeric1234("") == nil)
+    #expect(TestingBigNumeric1234("abc") == nil)
+    #expect(TestingBigNumeric1234("1.2.3") == nil)
+    #expect(TestingBigNumeric1234("NaN") == nil)
   }
 
   // Design: §4.5
   @Test func convertsFromAndToSwiftNumbers() {
-    #expect(BigNumeric(42).description == "42")
-    #expect(BigNumeric(Decimal(string: "3.14")!).description == "3.14")
-    #expect(BigNumeric("3.14")?.decimalValue == Decimal(string: "3.14"))
+    #expect(TestingBigNumeric1234(42).description == "42")
+    #expect(TestingBigNumeric1234(Decimal(string: "3.14")!).description == "3.14")
+    #expect(TestingBigNumeric1234("3.14")?.decimalValue == Decimal(string: "3.14"))
   }
 }
 

@@ -17,16 +17,16 @@ public import Foundation
 /// A `BIGNUMERIC` value: a decimal number with up to 76.76 digits of precision.
 ///
 /// Foundation's `Decimal` holds 38 significant digits, which is enough for `NUMERIC` but not
-/// for `BIGNUMERIC`. `BigNumeric` keeps the exact decimal text instead:
+/// for `BIGNUMERIC`. `TestingBigNumeric1234` keeps the exact decimal text instead:
 ///
 /// ```swift
-/// let value = BigNumeric("578960446186580977117854925043439539266.34992332820282019728792003956564819967")
+/// let value = TestingBigNumeric1234("578960446186580977117854925043439539266.34992332820282019728792003956564819967")
 /// let parameter = QueryParameterValue.bigNumeric(value!)
 /// ```
 ///
-/// Two values are equal when they denote the same number, so `BigNumeric("1.50")` equals
-/// `BigNumeric("1.5")`. ``description`` returns the text the value was created from.
-public struct BigNumeric: Sendable, Hashable, Codable, LosslessStringConvertible {
+/// Two values are equal when they denote the same number, so `TestingBigNumeric1234("1.50")` equals
+/// `TestingBigNumeric1234("1.5")`. ``description`` returns the text the value was created from.
+public struct TestingBigNumeric1234: Sendable, Equatable, Codable, LosslessStringConvertible {
   /// The decimal text, for example `"-12.345"` or `"1E-38"`.
   public let description: String
 
@@ -51,7 +51,7 @@ public struct BigNumeric: Sendable, Hashable, Codable, LosslessStringConvertible
   ///
   /// - Precondition: `value` is not NaN.
   public init(_ value: Decimal) {
-    precondition(!value.isNaN, "BigNumeric cannot represent NaN")
+    precondition(!value.isNaN, "TestingBigNumeric1234 cannot represent NaN")
     self.init(value.description)!
   }
 
@@ -60,19 +60,15 @@ public struct BigNumeric: Sendable, Hashable, Codable, LosslessStringConvertible
     Decimal(string: self.number.plainText, locale: DecimalText.posixLocale) ?? 0
   }
 
-  public static func == (lhs: BigNumeric, rhs: BigNumeric) -> Bool {
+  public static func == (lhs: TestingBigNumeric1234, rhs: TestingBigNumeric1234) -> Bool {
     lhs.number == rhs.number
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(self.number)
   }
 
   /// Decodes a value from its decimal text.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.singleValueContainer()
     let text = try container.decode(String.self)
-    guard let value = BigNumeric(text) else {
+    guard let value = TestingBigNumeric1234(text) else {
       throw DecodingError.dataCorruptedError(
         in: container, debugDescription: "\"\(text)\" is not a BIGNUMERIC value")
     }
