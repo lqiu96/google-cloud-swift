@@ -22,7 +22,7 @@ public struct BigNumeric {
   public let description: String          // the source text, verbatim
   public init?(_ description: String)     // [+-]digits[.digits][(e|E)[+-]digits]
   public init(_ value: some BinaryInteger); public init(_ value: Decimal)   // precondition: not NaN
-  public var decimalValue: Decimal { get } // rounded to 38 significant digits
+  public var decimalValue: Decimal { get } // rounded to 38 significant digits, 0 when unrepresentable
 }
 public struct BigQueryDate { year, month, day: Int; init(year:month:day:)   // not validated
   init?(_:)                                // YYYY-[M]M-[D]D, validated
@@ -49,7 +49,10 @@ public struct Interval {
 
 - `BigNumeric` keeps exact text (S§3 #14). Equality and hashing use a
   normalized number, so `BigNumeric("1.50") == BigNumeric("1.5")`. The service
-  checks the range.
+  checks the range. `decimalValue` rounds to the 38 significant digits
+  Foundation `Decimal` can hold, and falls back to `0` when Foundation cannot
+  represent the text (such as an exponent outside `Decimal`'s range). Callers
+  that need the exact value should use `description`.
 - Output: date `YYYY-MM-DD`. Time `HH:MM:SS` plus 6 fractional digits when
   non-zero (9 below a microsecond). DateTime `YYYY-MM-DD HH:MM:SS[.FFFFFF]`.
   Timestamp `YYYY-MM-DDTHH:MM:SS.ffffff[ffffff]Z` in UTC (12 digits only when
