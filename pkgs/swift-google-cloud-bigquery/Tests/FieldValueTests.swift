@@ -56,6 +56,14 @@ import Testing
   }
 
   // Baseline: U.FieldValue.01
+  @Test func isZeroIntervalAccessor() throws {
+    #expect(try FieldValue.scalar("0-0 0 0:0:0").isZeroInterval)
+    #expect(try FieldValue.scalar("P0Y0M0DT0H0M0S").isZeroInterval)
+    #expect(try !FieldValue.scalar("0-0 1 0:0:0").isZeroInterval)
+    #expect(try !FieldValue.null.isZeroInterval)
+  }
+
+  // Baseline: U.FieldValue.01
   @Test func nullReadsAsNilFromEveryAccessor() throws {
     let value = FieldValue.null
     #expect(value.isNull)

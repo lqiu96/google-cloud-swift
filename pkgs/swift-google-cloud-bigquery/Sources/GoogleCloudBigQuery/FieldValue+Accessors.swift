@@ -133,6 +133,13 @@ extension FieldValue {
     get throws { try self.parse("INTERVAL") { Interval($0) } }
   }
 
+  /// Whether the field holds a zero `INTERVAL` value.
+  ///
+  /// Throws `DecodingError` if the field cannot be decoded as an `INTERVAL`.
+  public var isZeroInterval: Bool {
+    get throws { try self.intervalValue == .zero }
+  }
+
   /// A `RANGE` value. Its ``BigQueryRange/elementType`` is `nil`; see the schema for the type.
   public var rangeValue: BigQueryRange? {
     get throws { try self.parse("RANGE") { BigQueryRange($0) } }
