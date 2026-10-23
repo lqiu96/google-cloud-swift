@@ -39,6 +39,7 @@ public struct BigQueryTimestamp {
   public var date: Date { get }
 }
 public struct Interval {
+  public static let zero: Interval
   public var months: Int; public var days: Int; public var time: Duration
   public init(months: Int, days: Int, time: Duration)
   public init(years: Int = 0, months: Int = 0, days: Int = 0, hours: Int64 = 0,
