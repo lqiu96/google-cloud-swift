@@ -215,6 +215,27 @@ import Testing
     #expect(tables[3].labels == ["key": "value"])
   }
 
+  // Baseline: U.BigQueryImpl.19
+  @Test func listPartitionsReadsPartitionsSummary() async throws {
+    let fake = FakeHTTPTransport()
+    fake.enqueue(
+      json: #"""
+        {"schema": {"fields": [{"name": "project_id", "type": "STRING"},
+          {"name": "partition_id", "type": "STRING"}]}}
+        """#)
+    fake.enqueue(
+      json: #"""
+        {"totalRows": "2", "rows": [{"f": [{"v": "p"}, {"v": "20240101"}]},
+          {"f": [{"v": "p"}, {"v": "20240102"}]}]}
+        """#)
+    let partitions = try await fake.client().listPartitions(
+      of: TableID(datasetID: "d", tableID: "t"))
+
+    #expect(partitions == ["20240101", "20240102"])
+    let summary = "\(Self.tablesPath)/t%24__PARTITIONS_SUMMARY__"
+    #expect(fake.requests.map(\.path) == [summary, "\(summary)/data"])
+  }
+
   // Baseline: U.BigQueryImpl.20, U.Table.02
   @Test func deleteTableReturnsWhetherItExisted() async throws {
     let fake = FakeHTTPTransport()
@@ -318,6 +339,7 @@ import Testing
     ("list", .get, tablesPath),
     ("update", .patch, tablePath),
     ("delete", .delete, tablePath),
+    ("listRows", .get, "\(tablePath)/data"),
   ])
   func routes(operation: String, method: HTTPMethod, path: String) async throws {
     let fake = FakeHTTPTransport()
@@ -330,7 +352,7 @@ import Testing
     case "list": _ = try await client.listTables(in: id.dataset).collect()
     case "update": _ = try await client.updateTable(Table(id: id))
     case "delete": _ = try await client.deleteTable(id)
-    default: break
+    default: _ = try await client.listRows(in: id, schema: Schema([]))
     }
     #expect(fake.requests.first?.method == method)
     #expect(fake.requests.first?.path == path)
