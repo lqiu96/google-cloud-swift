@@ -205,8 +205,10 @@ extension PagedSequence {                     // internal; public inits unchange
 
 ### Tests
 
-- No unit test targets `HTTPPagePrefetcher` directly. Paging through it is
-  pinned by `TableDataTests.nextPageUsesTokenWithoutStartIndex`,
+- `RowTests.HTTPPagePrefetcherTests`: `prefetchHitReusesInFlightRequest` and
+  `tokenMismatchFallsBackToDirectRequest`.
+- Paging through it is pinned by
+  `TableDataTests.nextPageUsesTokenWithoutStartIndex`,
   `QueryClientTests.fastPathReadsLaterPagesFromGetQueryResults`, and
   `QueryClientTests.slowPathPollsWithZeroMaxResultsAndReadsDestinationTable`.
 - Live (5B, [09-protocol.md](09-protocol.md#integration-tests)):
