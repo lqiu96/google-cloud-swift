@@ -61,7 +61,7 @@ public struct DatasetID: Sendable, Hashable, CustomStringConvertible {
 }
 public struct TableID   { projectID?, datasetID, tableID; init(projectID:datasetID:tableID:),
                           init(dataset:tableID:), init(_ "d.t" | "p.d.t" | "p:d.t") throws,
-                          var dataset: DatasetID; var hasDataset: Bool; var iamResourceName (internal) }
+                          var dataset: DatasetID; var hasDatasetID: Bool; var iamResourceName (internal) }
 public struct RoutineID { projectID?, datasetID, routineID; same shape, var dataset }
 public struct ModelID   { projectID?, datasetID, modelID;   same shape, var dataset }
 public struct JobID     { projectID?, jobID: String, location: String?; init(projectID:jobID:location:)
@@ -76,14 +76,14 @@ public struct JobID     { projectID?, jobID: String, location: String?; init(pro
 
 Query job statistics and anonymous temporary tables may carry a table reference without a dataset. Contract from `f6e6a959bd7d`:
 
-- `hasDataset == !datasetID.isEmpty`. Consumers check it before using `dataset` or building a dataset-scoped path.
+- `hasDatasetID == !datasetID.isEmpty`. Consumers check it before using `dataset` or building a dataset-scoped path.
 - `description` omits the empty dataset: `TableID(projectID: "p", datasetID: "", tableID: "_anon")` -> `p._anon`, without a project -> `_anon`. A full ID still prints `p.d.t`.
 - The string parser still rejects dataset-less input (`TableID("t")` throws). Such IDs only come from `TableID(wire:)` or the memberwise init.
 - Tests: `ResourceIDsTests` (`TableIDTests.datasetLessTableIDFormattingAndContract`, plus Dataset, Routine, Model and Job ID suites).
 
 ### Notes
 
-- bigquery.md 4.2 names the accessor `datasetReference`. The code uses `dataset` and adds `hasDataset`. The empty-component filter in `joinResourcePath` applies to every ID type.
+- bigquery.md 4.2 names the accessor `datasetReference`. The code uses `dataset` and adds `hasDatasetID`. The empty-component filter in `joinResourcePath` applies to every ID type.
 
 ## Errors
 

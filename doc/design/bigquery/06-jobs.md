@@ -52,7 +52,7 @@ public struct QueryStatistics { billingTier; cacheHit; statementType: StatementT
   `*_UNSPECIFIED` enum values (`specifiedEnumValue(_:)`) decode to `nil`.
 - Enum-like values (`StatementType`, `EvaluationKind`, `IndexUsageMode`, `UnusedReason`) are
   extensible `RawRepresentable` structs, so unknown wire values survive.
-- `referencedTables` keeps dataset-less references (anonymous result tables): `hasDataset == false`,
+- `referencedTables` keeps dataset-less references (anonymous result tables): `hasDatasetID == false`,
   printed as `p._anon`. See [03-core.md](03-core.md#dataset-less-tableid).
 - Tests: `JobModelTests.swift` (`JobStatisticsTests` with
   `queryStatisticsDecodesDatasetLessReferencedTables`, `QueryStageTests`, `DMLStatsTests`,

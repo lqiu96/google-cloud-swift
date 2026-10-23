@@ -128,7 +128,7 @@ func updateTable(_ table: Table, clearing: Set<Table.Field> = [], autodetectSche
 - `ViewDefinition.useLegacySQL` is always sent (default `false`). An absent wire value reads as `true`, the server default.
 - `timePartitioning.expirationMs` is sent only when set. `.partitionExpiration` clears it ([bigquery.md](../bigquery.md) 7).
 - List items are partial: `id`, `friendlyName`, `type`, `labels`, `creationTime`, `expirationTime`, partitioning, `clustering`, `requirePartitionFilter`, `generatedID`.
-- A wire reference with an empty `datasetId` stays empty: `id.hasDataset == false`, `id.description == "p._anon"`. This is the dataset-less `TableID` contract from slice 1, cascaded in commit 91f8665600d1.
+- A wire reference with an empty `datasetId` stays empty: `id.hasDatasetID == false`, `id.description == "p._anon"`. This is the dataset-less `TableID` contract from slice 1, cascaded in commit 91f8665600d1.
 - Tests: `TableTests.swift`, `TableOperationsTests.swift`, `DatasetClientTests.swift` (`tableOfDatasetInAnotherProjectUsesThatProject`).
 
 ### Notes
