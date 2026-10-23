@@ -22,6 +22,9 @@
 /// print(interval)  // 1-2 -3 4:0:0
 /// ```
 public struct Interval: Sendable, Hashable, Codable, LosslessStringConvertible {
+  /// The zero interval.
+  public static let zero = Interval(months: 0, days: 0, time: .zero)
+
   /// The number of months, including whole years (`years × 12 + months`).
   public var months: Int
   /// The number of days.
