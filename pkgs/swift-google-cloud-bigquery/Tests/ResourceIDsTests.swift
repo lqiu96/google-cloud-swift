@@ -102,15 +102,15 @@ import Testing
   // Contract: dataset-less TableID for query jobs and anonymous temporary tables
   @Test func datasetLessTableIDFormattingAndContract() {
     let anonWithProject = TableID(projectID: "p", datasetID: "", tableID: "_anon")
-    #expect(!anonWithProject.hasDataset)
+    #expect(!anonWithProject.hasDatasetID)
     #expect(anonWithProject.description == "p._anon")
 
     let anonWithoutProject = TableID(datasetID: "", tableID: "_anon")
-    #expect(!anonWithoutProject.hasDataset)
+    #expect(!anonWithoutProject.hasDatasetID)
     #expect(anonWithoutProject.description == "_anon")
 
     let standard = TableID(projectID: "p", datasetID: "d", tableID: "t")
-    #expect(standard.hasDataset)
+    #expect(standard.hasDatasetID)
     #expect(standard.description == "p.d.t")
   }
 }

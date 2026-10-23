@@ -91,10 +91,10 @@ public struct TableID: Sendable, Hashable, CustomStringConvertible {
   /// The dataset containing this table.
   public var dataset: DatasetID { DatasetID(projectID: self.projectID, datasetID: self.datasetID) }
 
-  /// Whether this table ID includes a non-empty dataset ID.
+  /// Whether ``datasetID`` is non-empty.
   ///
   /// BigQuery query job statistics and anonymous temporary tables may omit the dataset.
-  public var hasDataset: Bool {
+  public var hasDatasetID: Bool {
     !self.datasetID.isEmpty
   }
 
