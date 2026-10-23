@@ -16,6 +16,7 @@ import Foundation
 import GoogleCloudBigQueryV2
 import GoogleGax
 import GoogleWKT
+import Synchronization
 import Testing
 
 @testable import GoogleCloudBigQuery
@@ -274,5 +275,36 @@ import Testing
   func fieldTypeNormalizesLegacyNames(legacy: String, standard: String) {
     #expect(FieldType(rawValue: legacy).rawValue == standard)
     #expect(FieldType(rawValue: legacy) == FieldType(rawValue: standard))
+  }
+}
+
+@Suite struct HTTPPagePrefetcherTests {
+  // Design: 08-performance.md#page-prefetch
+  @Test func prefetchHitReusesInFlightRequest() async throws {
+    let requests = Mutex([String]())
+    let prefetcher = HTTPPagePrefetcher { token in
+      requests.withLock { $0.append(token) }
+      return HTTPResponse(statusCode: 200, headers: [:], body: Data(#"{"rows": []}"#.utf8))
+    }
+    prefetcher.prefetch("token-1")
+    let page = try await prefetcher.fetchPage("token-1", schema: [])
+    #expect(page.items.isEmpty)
+    #expect(requests.withLock { $0 } == ["token-1"])
+  }
+
+  // Design: 08-performance.md#page-prefetch
+  @Test func tokenMismatchFallsBackToDirectRequest() async throws {
+    let requests = Mutex([String]())
+    let prefetcher = HTTPPagePrefetcher { token in
+      requests.withLock { $0.append(token) }
+      return HTTPResponse(statusCode: 200, headers: [:], body: Data(#"{"rows": []}"#.utf8))
+    }
+    prefetcher.prefetch("token-1")
+    while requests.withLock({ $0.isEmpty }) {
+      try await Task.sleep(nanoseconds: 1_000_000)
+    }
+    let page = try await prefetcher.fetchPage("token-2", schema: [])
+    #expect(page.items.isEmpty)
+    #expect(requests.withLock { $0 } == ["token-1", "token-2"])
   }
 }
