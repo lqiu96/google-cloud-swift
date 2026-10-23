@@ -156,7 +156,7 @@ import Testing
     let statistics = JobStatistics(wire: wire)
     let query = try #require(statistics.query)
     let table = try #require(query.referencedTables.first)
-    #expect(!table.hasDataset)
+    #expect(!table.hasDatasetID)
     #expect(table.description == "p._anon")
     #expect(table.tableID == "_anon")
   }
