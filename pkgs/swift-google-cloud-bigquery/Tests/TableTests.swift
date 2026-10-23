@@ -388,7 +388,7 @@ private typealias ExternalDataConfiguration = GoogleCloudBigQuery.ExternalDataCo
     wire.tableReference = tableRef
 
     let table = Table(wire: wire)
-    #expect(!table.id.hasDataset)
+    #expect(!table.id.hasDatasetID)
     #expect(table.id.description == "p._anon")
     #expect(table.id.tableID == "_anon")
   }
