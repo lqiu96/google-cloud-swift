@@ -34,5 +34,6 @@
 
 ## Decisions Log
 
+- 2026-10-23 PR 34: prompt cancellation of prefetched pages deferred to a follow-up covering all paged reads.
 - 2026-10-23 PR 21: rename TableID.hasDataset to hasDatasetID to match the stored datasetID property it tests.
 - 2026-10-23 PR -: stack base is cascade-test/main at d7a705415c74, the fork main the slices were written against. The slices do not build on newer fork main (gax MemberImportVisibility, idempotency rename). A rebase onto newer main is a later, separate change.
