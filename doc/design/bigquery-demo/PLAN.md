@@ -19,3 +19,4 @@
 ## Decisions Log
 
 - 2026-10-23 PR -: distilled 3-slice team test stack (A -> B -> C) on cascade-demo/main.
+- 2026-10-23 PR 41: rename BigNumeric to TestingBigNumeric1234 and drop Hashable conformance (04-values.md#scalar-types).

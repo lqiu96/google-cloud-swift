@@ -12,13 +12,14 @@ make no RPCs, so there is no retry or 404 behavior. Errors are `DecodingError`
 
 ## Scalar types
 
-Slice 2A. Each type is `Sendable, Hashable, Codable, LosslessStringConvertible`
-(civil types and `BigQueryTimestamp` are also `Comparable`). `Codable` is one
+Slice 2A. Civil types, `Interval`, and SQL types are `Sendable, Hashable, Codable, LosslessStringConvertible`
+(civil types and `BigQueryTimestamp` are also `Comparable`). `TestingBigNumeric1234` is
+`Sendable, Equatable, Codable, LosslessStringConvertible` (not `Hashable`). `Codable` is one
 string in the canonical form, and `description` is that form. Query parameters
 and insertAll encoding rely on it.
 
 ```swift
-public struct BigNumeric {
+public struct TestingBigNumeric1234 {
   public let description: String          // the source text, verbatim
   public init?(_ description: String)     // [+-]digits[.digits][(e|E)[+-]digits]
   public init(_ value: some BinaryInteger); public init(_ value: Decimal)   // precondition: not NaN
@@ -47,8 +48,8 @@ public struct Interval {
 }
 ```
 
-- `BigNumeric` keeps exact text (S§3 #14). Equality and hashing use a
-  normalized number, so `BigNumeric("1.50") == BigNumeric("1.5")`. The service
+- `TestingBigNumeric1234` keeps exact text (S§3 #14). Equality uses a
+  normalized number, so `TestingBigNumeric1234("1.50") == TestingBigNumeric1234("1.5")`. The service
   checks the range. `decimalValue` rounds to the 38 significant digits
   Foundation `Decimal` can hold, and falls back to `0` when Foundation cannot
   represent the text (such as an exponent outside `Decimal`'s range). Callers
@@ -72,7 +73,7 @@ enum Timestamp { static func micros(from: Date) -> Int64; static func date(fromM
 ```
 
 Tests: `Tests/FieldValueTests.swift` suites `IntervalTests` (U.FieldValue.04,
-U.QueryParameterValue.05), `BigNumericTests`, `CivilTypesTests`.
+U.QueryParameterValue.05), `TestingBigNumeric1234Tests`, `CivilTypesTests`.
 
 ### Notes
 
@@ -165,7 +166,7 @@ extension FieldValue {
   public var stringValue, jsonValue, geographyValue: String?; arrayValue: [FieldValue]?; recordValue: Row?
   // parsing accessors, { get throws }: nil for NULL
   int64Value: Int64?, doubleValue: Double? (NaN, +-Infinity), boolValue: Bool? (any case),
-  bytesValue: Data? (base64), numericValue: Decimal?, bigNumericValue: BigNumeric? (also NUMERIC),
+  bytesValue: Data? (base64), numericValue: Decimal?, bigNumericValue: TestingBigNumeric1234? (also NUMERIC),
   timestampMicros: Int64?, timestampValue: Date?, preciseTimestampValue: BigQueryTimestamp?,
   dateValue: BigQueryDate?, timeValue: BigQueryTime?, dateTimeValue: BigQueryDateTime?,
   intervalValue: Interval? (both forms), rangeValue: BigQueryRange? (elementType nil)
@@ -253,7 +254,7 @@ extension Row: Decodable {}          // inside Row.decode only: a STRUCT cell, u
 | ---------- | ----------- |
 | `String` | any scalar, as text |
 | `Bool`, integers, `Double`, `Float` | `BOOL`, `INT64`, `FLOAT64` |
-| `Decimal`, `BigNumeric` | `NUMERIC`, `BIGNUMERIC` |
+| `Decimal`, `TestingBigNumeric1234` | `NUMERIC`, `BIGNUMERIC` |
 | `Date`, `BigQueryTimestamp` | `TIMESTAMP`, `TIMESTAMP(12)` |
 | `Data` | `BYTES` |
 | `BigQueryDate`, `BigQueryTime`, `BigQueryDateTime` | `DATE`, `TIME`, `DATETIME` |
