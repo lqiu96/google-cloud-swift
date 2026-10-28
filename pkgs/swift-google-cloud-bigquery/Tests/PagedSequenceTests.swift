@@ -87,5 +87,43 @@ import Testing
   // Design: §4.4
   @Test func fixedItemsForTestDoubles() async throws {
     #expect(try await PagedSequence([1, 2, 3]).collect() == [1, 2, 3])
+    let emptyRows = RowSequence(schema: [Field("x", .int64)], rows: [])
+    #expect(try await emptyRows.collect().isEmpty)
+    #expect(emptyRows.schema.fields.map(\.name) == ["x"])
+    #expect(emptyRows.totalRows == 0)
+
+    let schema: Schema = [Field("x", .int64)]
+    let row1 = Row(schema: schema, values: [.scalar("1")])
+    let row2 = Row(schema: schema, values: [.scalar("2")])
+    let nonEmptyRows = RowSequence(schema: schema, rows: [row1, row2])
+    #expect(try await nonEmptyRows.collect() == [row1, row2])
+    #expect(nonEmptyRows.totalRows == 2)
+  }
+
+  // Design: 04-values.md#row-sequence
+  @Test func rowSequencePages() async throws {
+    let schema: Schema = [Field("x", .int64)]
+    let row1 = Row(schema: schema, values: [.scalar("1")])
+    let row2 = Row(schema: schema, values: [.scalar("2")])
+    let sequence = RowSequence(
+      schema: schema,
+      totalRows: 2,
+      rows: PagedSequence<Row>(fetch: { token in
+        if token == nil {
+          return Page(items: [row1], nextPageToken: "token-2")
+        } else if token == "token-2" {
+          return Page(items: [row2], nextPageToken: nil)
+        }
+        return Page(items: [], nextPageToken: nil)
+      }))
+    var collectedPages: [[Row]] = []
+    var tokens: [String?] = []
+    for try await page in sequence.pages {
+      collectedPages.append(page.items)
+      tokens.append(page.nextPageToken)
+    }
+    #expect(collectedPages == [[row1], [row2]])
+    #expect(tokens == ["token-2", nil])
+    #expect(sequence.totalRows == 2)
   }
 }
