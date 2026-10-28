@@ -7,13 +7,14 @@ Provide an idiomatic Swift 6 veneer client library (`GoogleCloudBigQuery` in `pk
 ### Goals
 
 - Cover all operations on the BigQuery v2 API: datasets, tables, routines, models, jobs (query, load, extract, copy), the `jobs.query` fast path, stateless queries, `tabledata.insertAll`, `tabledata.list`, table IAM, and resumable uploads.
-- Provide an idiomatic Swift 6 API built on `async` and `await`, `Sendable` value types, `AsyncSequence` pagination, `Codable` row decoding, and strongly typed resource identifiers.
+- Provide an idiomatic Swift 6 API built on `async` and `await`, `Sendable` value types, `AsyncSequence` pagination, and strongly typed resource identifiers.
 - Keep generated wire models (`GoogleCloudBigQueryV2`) and HTTP transport details internal to the veneer package.
 - Achieve streaming row read throughput and memory footprint competitive with or better than Java on multi-million-row result sets.
 
 ### Non-Goals
 
 - Storage Read API and Apache Arrow serialization (deferred until a generated Storage v1 module and Swift Arrow dependency exist in the repository).
+- Codable row decoding (RowDecoder).
 - Beta `Connection` API, OpenTelemetry tracing spans, schema inference from `Encodable`, and automatic whole-query job retry.
 
 ### Hand-written veneer over generated v2 wire models
@@ -36,17 +37,13 @@ Cancelling the calling Swift `Task` stops local polling or page iteration withou
 
 Every query request and view definition sends `useLegacySql = false` unless explicitly overridden. When reading a job or view from the server, an omitted `useLegacySql` field is interpreted as legacy SQL to match BigQuery wire defaults.
 
-## Runtime and Decoder Hooks
+## Runtime and Transport Hooks
 
-Slice `0A` adds minimal `@_spi(Internal)` hooks in `GoogleGax` and `GoogleWKT` so `GoogleCloudBigQuery` can issue custom multipart or resumable HTTP requests and decode raw row JSON without double-parsing through `JSONSerialization`.
+Slice `0A` adds minimal `@_spi(Internal)` hooks in `GoogleGax` so `GoogleCloudBigQuery` can issue custom multipart or resumable HTTP requests.
 
 ### Contract: HTTPClientHolder exposes raw HTTP requests via SPI
 
 `_HTTPClient.executeRaw` and `HTTPClientResponse` expose raw request execution, response status codes, headers, and byte buffers under `@_spi(Internal)` so sibling veneer packages can implement resumable upload protocols and custom empty-body handling while sharing authentication and retry loops.
-
-### Contract: ProtoJSONDecoder bypasses interceptor for raw JSON types
-
-`_RawJSONDecodable` allows types that parse raw UTF-8 JSON directly to bypass `ProtoJSONDecoder`'s `JSONSerialization` interceptor pass when the root type conforms to `_RawJSONDecodable`.
 
 ## Generated Wire Module
 
@@ -103,14 +100,6 @@ Slice `2B` implements `Row`, `FieldValue`, `BigQueryRange`, and `RowSequence`.
 ### Contract: BigQueryRange parses half-open bounds for date datetime and timestamp
 
 `BigQueryRange` parses `[lower, upper)` range wire literals, treating `UNBOUNDED` and `NULL` endpoints as unbounded (`nil`) and decoding bounded endpoints according to the schema's `rangeElementType` (`DATE`, `DATETIME`, or `TIMESTAMP`).
-
-## Codable Row Decoder
-
-Slice `2C` implements `RowDecoder` and `RowSequence.decode(_:decoder:)`.
-
-### Contract: RowDecoder maps schema-typed rows into Swift Decodable models
-
-`RowDecoder` decodes a `Row` (and nested `RECORD` or repeated `ARRAY` `FieldValue` trees) into any Swift `Decodable` type, supporting `.useDefaultKeys` and `.convertFromSnakeCase` key strategies as well as direct decoding of `Date`, `Data`, `Decimal`, `URL`, `UUID`, and BigQuery scalar types.
 
 ## Datasets, Projects, and Table IAM
 
