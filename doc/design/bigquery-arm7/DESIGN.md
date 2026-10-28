@@ -125,13 +125,17 @@ Slice `3B` implements `Table`, `TableDefinition` (`StandardTableDefinition`, `Vi
 
 `ExternalDataConfiguration` encodes and decodes CSV, Parquet, Avro, ORC, Google Sheets, Bigtable, Datastore, and BigLake options along with hive partitioning and decimal target types.
 
-## TableData and Streaming Inserts
+## TableData List
 
-Slice `3C` implements `BigQueryClient+TableData` (`listRows`) and `BigQueryClient+InsertAll` (`insertAll`, `InsertRow`, `InsertRowEncoder`, `InsertAllResponse`).
+Slice `3C` implements `BigQueryClient+TableData` (`listRows`) and `BigQueryClient+Tables`.
 
 ### Contract: listRows requests ISO8601 timestamps and Int64 encoding
 
 `listRows` calls `tabledata.list` with `formatOptions.useInt64Timestamp = true` (or `timestampOutputFormat = ISO8601_STRING` when picosecond timestamp columns are present in the schema) and returns a `RowSequence` over all pages.
+
+## Streaming Inserts
+
+Slice `3C2` implements `BigQueryClient+InsertAll` (`insertAll`, `InsertRow`, `InsertRowEncoder`, `InsertAllResponse`).
 
 ### Contract: insertAll generates UUID insert IDs and disables retry when opted out
 
