@@ -507,4 +507,31 @@ import Testing
       from: BigQueryTimestamp("2025-01-01T12:34:56.123456789123Z"), to: nil)
     #expect(precise.start == "2025-01-01 12:34:56.123456789123+00:00")
   }
+
+  // Design: 04-values.md#range-values
+  @Test func codableRoundTrip() throws {
+    let standard = BigQueryRange(start: "2020-01-01", end: "2020-12-31", elementType: .date)
+    let standardData = try JSONEncoder().encode(standard)
+    let standardDecoded = try JSONDecoder().decode(BigQueryRange.self, from: standardData)
+    #expect(standardDecoded.start == "2020-01-01")
+    #expect(standardDecoded.end == "2020-12-31")
+    #expect(standardDecoded.elementType == nil)
+    #expect(standardDecoded.description == "[2020-01-01, 2020-12-31)")
+
+    let unbounded = BigQueryRange(start: nil, end: nil, elementType: .timestamp)
+    let unboundedData = try JSONEncoder().encode(unbounded)
+    let unboundedDecoded = try JSONDecoder().decode(BigQueryRange.self, from: unboundedData)
+    #expect(unboundedDecoded.start == nil)
+    #expect(unboundedDecoded.end == nil)
+    #expect(unboundedDecoded.elementType == nil)
+    #expect(unboundedDecoded.description == "[UNBOUNDED, UNBOUNDED)")
+
+    let lowerUnbounded = BigQueryRange(start: nil, end: "2020-12-31")
+    let lowerData = try JSONEncoder().encode(lowerUnbounded)
+    let lowerDecoded = try JSONDecoder().decode(BigQueryRange.self, from: lowerData)
+    #expect(lowerDecoded.start == nil)
+    #expect(lowerDecoded.end == "2020-12-31")
+    #expect(lowerDecoded.elementType == nil)
+    #expect(lowerDecoded.description == "[UNBOUNDED, 2020-12-31)")
+  }
 }
