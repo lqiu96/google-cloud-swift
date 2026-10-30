@@ -79,6 +79,14 @@ import Testing
     #expect(String(decoding: data, as: UTF8.self) == #"["1-0 2 0:0:3"]"#)
     #expect(try JSONDecoder().decode([Interval].self, from: data) == [interval])
   }
+
+  @Test func isZeroReportsZeroInterval() {
+    #expect(Interval(months: 0, days: 0, time: .zero).isZero)
+    #expect(Interval().isZero)
+    #expect(!Interval(months: 1, days: 0, time: .zero).isZero)
+    #expect(!Interval(months: 0, days: 1, time: .zero).isZero)
+    #expect(!Interval(months: 0, days: 0, time: .seconds(1)).isZero)
+  }
 }
 
 @Suite struct BigNumericTests {

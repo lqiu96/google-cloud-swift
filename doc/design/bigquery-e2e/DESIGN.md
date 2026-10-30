@@ -10,7 +10,7 @@ Slice A (`BigNumeric.swift`, `CivilTypes.swift`, `Interval.swift`, `RoutineDataT
 
 ### Contract: Lossless Scalar Value Representations
 
-Each scalar type conforms to `Sendable`, `Hashable`, `Codable`, and `LosslessStringConvertible`, preserving exact wire text representations for `BIGNUMERIC`, `DATE`, `TIME`, `DATETIME`, `TIMESTAMP`, and `INTERVAL`.
+Each scalar type conforms to `Sendable`, `Hashable`, `Codable`, and `LosslessStringConvertible`, preserving exact wire text representations for `BIGNUMERIC`, `DATE`, `TIME`, `DATETIME`, `TIMESTAMP`, and `INTERVAL`. `Interval.isZero` reports whether all interval components (`months`, `days`, and `time`) are zero.
 
 ## Row and FieldValue
 

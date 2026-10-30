@@ -29,6 +29,9 @@ public struct Interval: Sendable, Hashable, Codable, LosslessStringConvertible {
   /// The time part.
   public var time: Duration
 
+  /// Returns `true` if all components (months, days, and time) are zero.
+  public var isZero: Bool { self.months == 0 && self.days == 0 && self.time == .zero }
+
   /// Creates an interval from its three parts.
   public init(months: Int, days: Int, time: Duration) {
     self.months = months
