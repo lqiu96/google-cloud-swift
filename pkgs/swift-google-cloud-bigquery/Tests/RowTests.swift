@@ -98,6 +98,17 @@ import Testing
     #expect(Row(schema: [], values: [.scalar("x")])["a"] == nil)
   }
 
+  @Test func isZeroIntervalConvenience() throws {
+    #expect(FieldValue.scalar("0-0 0 0:0:0").isZeroInterval)
+    #expect(FieldValue.scalar("P0Y0M0DT0H0M0S").isZeroInterval)
+    #expect(!FieldValue.scalar("1-0 0 0:0:0").isZeroInterval)
+    #expect(!FieldValue.scalar("0-0 1 0:0:0").isZeroInterval)
+    #expect(!FieldValue.scalar("0-0 0 0:0:1").isZeroInterval)
+    #expect(!FieldValue.null.isZeroInterval)
+    #expect(!FieldValue.scalar("not an interval").isZeroInterval)
+    #expect(!FieldValue.array([]).isZeroInterval)
+  }
+
   // Design: §4.5
   @Test func rejectsMalformedRows() throws {
     #expect(throws: RequestError.self) { try self.row(#"{"f": "x"}"#) }
